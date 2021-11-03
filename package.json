@@ -1,0 +1,34 @@
+{
+  "name": "express-chat",
+  "version": "1.0.0",
+  "description": "Simple chat app built with expressjs, websocket & mongodb",
+  "main": "app.js",
+  "scripts": {
+    "start": "NODE_ENV=development nodemon app.js",
+    "production": "NODE_ENV=production node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Saud",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^7.2.0",
+    "eslint-config-airbnb-base": "14.2.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-prettier": "^4.0.0",
+    "prettier": "^2.4.1"
+  },
+  "dependencies": {
+    "bcrypt": "^5.0.1",
+    "cookie-parser": "^1.4.5",
+    "dotenv": "^10.0.0",
+    "ejs": "^3.1.6",
+    "express": "^4.17.1",
+    "express-validator": "^6.13.0",
+    "http-error": "^0.0.6",
+    "http-errors": "^1.8.0",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.0.12",
+    "multer": "^1.4.3"
+  }
+}
