@@ -11,6 +11,8 @@ const dotenv = require('dotenv');
 const path = require('path');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
+const http = require('http');
+const { Server } = require('socket.io');
 const login = require('./router/login');
 const inbox = require('./router/inbox');
 const users = require('./router/users');
@@ -19,7 +21,16 @@ const errorHandler = require('./middlewares/errorHandler');
 // App initialization
 const app = express();
 
+// .env file
 dotenv.config();
+
+// Socket.io
+const server = http.createServer(app);
+
+const io = new Server(server);
+
+// Set io globally
+global.io = io;
 
 // Request parser
 app.use(express.json());
@@ -55,6 +66,6 @@ app.use(errorHandler.notFound);
 // Default error handler
 app.use(errorHandler.defaultError);
 
-app.listen(3000, () => {
+server.listen(3000, () => {
   console.log('App is listening at port 3000.');
 });

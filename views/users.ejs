@@ -4,19 +4,21 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="author" content="Sumit Saha" />
-    <meta name="owner" content="learnwithsumit.com" />
     <title><%= title %></title>
-    <link rel="shortcut icon" href="./images/favicon.png" />
     <link rel="stylesheet" href="./stylesheets/toastify.css" />
     <link rel="stylesheet" href="./stylesheets/style.css" />
     <script src="./js/toastify.js"></script>
+    <script src="./js/moment.js"></script>
   </head>
   <body>
     <div class="menu">
       <div class="menu-item"><a href="/inbox">Inbox</a></div>
       <div class="menu-item"><a href="/users">Users</a></div>
+      <% if(loggedInUserData && loggedInUserData.username){ %>
+      <div class="menu-item"><a href="#" onclick="logout()">Logout</a></div>
+      <% } else { %>
       <div class="menu-item"><a href="/">Login</a></div>
+      <% } %>
     </div>
 
     <div class="manageUser-container">
@@ -38,16 +40,26 @@
             </tr>
           </thead>
           <tbody id="users-table">
-            <tr id="">
+            <% data.forEach((userData) => { %>
+            <tr id="<%= userData._id %>">
               <td class="name">
-                <img src="./images/user1.png" />
-                <span>User 1</span>
+                <% if(userData.image){ %>
+                <img src="../uploads/people/<%= userData.image %>" />
+                <% } else{ %>
+                <img src="./images/nophoto.png" />
+                <% } %>
+                <span><%= userData.name %></span>
               </td>
-              <td>email@email.com</td>
+              <td><%= userData.email %></td>
               <td class="manage">
-                <img src="./images/trash.png" alt="Delete" />
+                <img
+                  src="./images/trash.png"
+                  alt="Delete"
+                  onclick="deleteUser('<%= userData._id %>')"
+                />
               </td>
             </tr>
+            <% }) %>
           </tbody>
         </table>
       </div>
@@ -60,13 +72,24 @@
           <h2>Create New User</h2>
         </div>
         <div class="modal-body">
-          <form id="add-user-form">
-            <input type="text" placeholder="enter name" name="name" />
-            <p class="error show">This is error</p>
-            <input type="text" placeholder="enter email" name="email" />
-            <input type="text" placeholder="enter mobile" name="mobile" />
-            <input type="password" placeholder="enter password" name="password" />
-            <input type="file" name="avatar" />
+          <form id="add-user-form" method="post" action="/users" enctype="multipart/form-data">
+            <input type="text" placeholder="Enter name" name="name" />
+            <p class="error name-error"></p>
+
+            <input type="text" placeholder="Enter email" name="email" />
+            <p class="error email-error"></p>
+
+            <input type="text" placeholder="Enter mobile" name="mobile" />
+            <p class="error mobile-error"></p>
+
+            <input type="password" placeholder="Enter password" name="password" />
+            <p class="error password-error"></p>
+
+            <input type="file" name="image" />
+            <p class="error avatar-error"></p>
+
+            <p class="error common-error"></p>
+
             <input type="submit" value="Submit" />
           </form>
         </div>
@@ -74,11 +97,90 @@
     </div>
     <script>
       const modal = document.querySelector('#add-user-modal');
+      const form = document.querySelector('#add-user-form');
+
       function closeModal() {
         modal.style.display = 'none';
       }
       function openModal() {
         modal.style.display = 'block';
+      }
+
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+
+        // Hide all error messages first
+        currErrorMsg = document.querySelectorAll('p.error');
+
+        for (let i = 0; i < currErrorMsg.length; i++) {
+          currErrorMsg[i].style.display = 'none';
+        }
+
+        // Hide all input fields errors first
+        const currInpError = document.querySelectorAll('input.error');
+
+        if (currInpError.length > 0) {
+          for (let i = 0; i < currInpError.length; i++) {
+            currInpError[i].classList.remove('error');
+          }
+        }
+
+        // Create form data
+        const formData = new FormData(form);
+
+        // Send request to server
+        let response = await fetch('/users', {
+          method: 'POST',
+          body: formData,
+        });
+
+        // Get response
+        const result = await response.json();
+
+        if (result.errors) {
+          // display error messages to corresponding fields
+          Object.keys(result.errors).forEach((fieldName) => {
+            form[fieldName].classList.add('error');
+
+            const addError = document.querySelector('.' + fieldName + '-error');
+            addError.textContent = result.errors[fieldName].msg;
+
+            addError.style.display = 'block';
+          });
+        } else {
+          alert('User added successfully.');
+
+          closeModal();
+
+          // Hide all error messages
+          document.querySelector('p.error').style.display = 'none';
+
+          // reload page
+          setTimeout(() => {
+            location.reload();
+          }, 1000);
+        }
+      };
+
+      const deleteUser = async (id) => {
+        const response = await fetch('/users/' + id, {
+          method: 'DELETE',
+        });
+
+        const result = await response.json();
+
+        alert('User deleted successfully');
+
+        document.getElementById(id).remove();
+      };
+
+      // Logout
+      function logout() {
+        fetch('/', {
+          method: 'DELETE',
+        });
+
+        location.reload();
       }
     </script>
   </body>

@@ -8,7 +8,7 @@
 // Dependencies
 const createError = require('http-errors');
 
-// App initialization
+// Middleware initialization
 const errorHandler = {};
 
 // Not found handler

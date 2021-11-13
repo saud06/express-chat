@@ -4,81 +4,483 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="author" content="Sumit Saha" />
-    <meta name="owner" content="learnwithsumit.com" />
     <title><%= title %></title>
-    <link rel="shortcut icon" href="./images/favicon.png" />
     <link rel="stylesheet" href="./stylesheets/toastify.css" />
     <link rel="stylesheet" href="./stylesheets/style.css" />
     <script src="./js/toastify.js"></script>
+    <script src="./js/moment.js"></script>
   </head>
   <body>
     <div class="menu">
       <div class="menu-item"><a href="/inbox">Inbox</a></div>
       <div class="menu-item"><a href="/users">Users</a></div>
+      <% if(loggedInUserData && loggedInUserData.username){ %>
+      <div class="menu-item"><a href="#" onclick="logout()">Logout</a></div>
+      <% } else { %>
       <div class="menu-item"><a href="/">Login</a></div>
+      <% } %>
     </div>
 
     <div id="chat-container">
       <div id="search-container">
-        <input type="text" placeholder="Search" />
+        <input
+          type="text"
+          placeholder="Search user by name"
+          name="username"
+          id="username"
+          autocomplete="off"
+        />
+        <div class="main_search_users"></div>
       </div>
+
       <div id="conversation-list">
-        <div class="conversation active">
-          <img src="./images/user1.png" alt="Sumit" />
-          <div class="title-text">Sumit Saha</div>
-          <di class="created-date"> Apr 16 </di>
-          <div class="conversation-message">This is a message</div>
+        <% data.forEach(function(conversation) { %>
+        <!-- conversation createdBy is same to logged in user, so we need to show participant name and image -->
+        <% if(conversation.createdBy.id == loggedInUserData.userId) { %>
+        <div
+          class="conversation"
+          onclick="getMessages('<%= conversation._id %>', '<%= conversation.participant.name %>')"
+        >
+          <% if (conversation.participant.image) { %>
+          <img
+            src="./uploads/people/<%= conversation.participant.image %>"
+            alt="<%= conversation.participant.name %>"
+          />
+          <% } else { %>
+          <img src="./images/nophoto.png" />
+          <% } %>
+          <div class="title-text"><%= conversation.participant.name %></div>
+          <div class="conversation-date"><%= conversation.updatedOn %></div>
         </div>
-        <div class="conversation">
-          <img src="./images/user2.png" alt="Sumit" />
-          <div class="title-text">Sumit Saha</div>
-          <di class="created-date"> Apr 16 </di>
-          <div class="conversation-message">This is a message</div>
+        <% } else { %>
+        <div
+          class="conversation"
+          onclick="getMessages('<%= conversation._id %>', '<%= conversation.createdBy.name %>')"
+        >
+          <% if (conversation.createdBy.image) { %>
+          <img
+            src="./uploads/people/<%= conversation.createdBy.image %>"
+            alt="<%= conversation.createdBy.name %>"
+          />
+          <% } else { %>
+          <img src="./images/nophoto.png" />
+          <% } %>
+          <div class="title-text"><%= conversation.createdBy.name %></div>
+          <div class="conversation-date"><%= conversation.updatedOn %></div>
         </div>
+        <% } %> <% }); %>
+
+        <!-- show no conversation placeholder image for 0 conversations -->
+        <% if(data && data.length === 0) { %>
+        <div class="nothing"><img src="./images/no-conversation.svg" /></div>
+        <% } %>
       </div>
-      <div id="new-message-container">
+
+      <div class="new-message-container" onclick="openModal()">
         <a href="#">+</a>
       </div>
+
       <div id="chat-title">
-        <span>Sumit</span>
-        <img src="./images/trash.png" alt="Delete Conversation" />
+        <span id="conversation-partner"></span>
+        <img src="./images/trash.png" alt="Delete Conversation" onclick="deleteConversation()" />
       </div>
+
+      <!-- placeholder div if no messages are in messages area -->
       <div id="chat-message-list">
-        <div class="message-row other-message">
-          <div class="message-content">
-            <img src="./images/user1.png" alt="Sumit" />
-            <div class="message-text">Ok then</div>
-            <div class="message-time">Apr 16</div>
-          </div>
-        </div>
-        <div class="message-row you-message">
-          <div class="message-content">
-            <div class="message-text">Lorem ipsum dolor sit amet</div>
-            <div class="message-time">Apr 16</div>
-          </div>
-        </div>
+        <div class="nothing">Select a conversation</div>
       </div>
-      <div id="chat-form">
-        <img src="./images/attachment.png" alt=Add Attachment"" />
-        <input type="text" placeholder="Type a message" />
-      </div>
+
+      <!-- send message form -->
+      <form id="chat-form" method="post" enctype="multipart/form-data">
+        <label for="attachment"><img src="./images/attachment.png" alt="Add Attachment" /></label>
+        <input type="file" multiple name="attachment" class="hide" id="attachment" />
+        <input type="text" name="message" placeholder="Type a message" autocomplete="off" />
+      </form>
     </div>
 
-    <div class="modal-wrapper">
+    <!-- Create new conversation -->
+    <div class="modal-wrapper" id="add-conversation-modal">
       <div class="modal">
-        <a href="#" class="modal-close">+</a>
+        <a onclick="closeModal()" class="modal-close">+</a>
         <div class="modal-title">
           <h2>Create New Conversation</h2>
         </div>
         <div class="modal-body">
-          <form>
-            <input type="text" placeholder="Name" />
-            <input type="text" placeholder="Username" />
-            <input type="button" value="Submit" />
-          </form>
+          <input
+            type="text"
+            placeholder="Search user by name or email or mobile"
+            name="user"
+            id="user"
+            autocomplete="off"
+            style="width: 100%"
+          />
+          <p class="error"></p>
+
+          <div class="search_users"></div>
         </div>
       </div>
     </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const form = document.querySelector('#chat-form');
+      const messageContainer = document.querySelector('#chat-message-list');
+      const chatTitleContainer = document.querySelector('#conversation-partner');
+      const loggedinUserId = '<%= loggedInUserData.userId %>';
+      const loggedinUserName = '<%= loggedInUserData.username %>';
+      let participant = null; // selected conversation participant object
+      let current_conversation_id; // selected conversation id
+      const socket = io(); // socket initialization
+
+      // Handle new/live incoming message from socket
+      socket.on('message', (data) => {
+        // only respond if current conversation is open in any client
+        if (data.message.conversationId == current_conversation_id) {
+          // message class
+          const messageClass =
+            data.message.sender.id === loggedinUserId ? 'you-message' : 'other-message';
+
+          const senderImage = data.message.sender.image
+            ? `<img src="./uploads/people/${data.message.sender.image}" alt="${data.message.sender.name}" />`
+            : `<img src="./images/nophoto.png" alt="${data.message.sender.name}" />`;
+
+          // message attachments
+          let attachments = '<div class="attachments">';
+          if (data.message.attachment && data.message.attachment.length > 0) {
+            data.message.attachment.forEach((attachment) => {
+              attachments += `<img src="./uploads/attachments/${attachment}" /> `;
+            });
+          }
+          attachments += '</div>';
+          let messageHTML;
+
+          // do not show image for loggedin user
+          if (data.message.sender.id == loggedinUserId) {
+            messageHTML = `<div class="message-row ${messageClass}"><div class="message-content">
+              <div class="message-text">${data.message.text}</div>
+              ${attachments}
+              <div class="message-time">${data.message.datetime}</div>
+            </div></div>`;
+          } else {
+            messageHTML = `<div class="message-row ${messageClass}"><div class="message-content">
+              ${senderImage}
+              <div class="message-text">${data.message.text}</div>
+              ${attachments}
+              <div class="message-time">${data.message.datetime}</div>
+            </div></div>`;
+          }
+
+          // append the inoming message to message area as last item
+          document
+            .querySelector('#chat-message-list > .message-row:first-child')
+            .insertAdjacentHTML('beforeBegin', messageHTML);
+        }
+      });
+
+      // Get messages of a conversation
+      async function getMessages(id, current_conversation_name) {
+        let response = await fetch(`/inbox/message/${id}`, {
+          method: 'GET',
+        });
+
+        const result = await response.json();
+
+        if (!result.errors && result.data) {
+          form.style.visibility = 'visible';
+
+          participant = result.data.participant;
+          current_conversation_id = result.id;
+
+          if (result.data.message) {
+            let allMessages = '';
+
+            if (result.data.message.length > 0) {
+              result.data.message.forEach((message) => {
+                let senderImage = message.sender.image
+                  ? `./uploads/people/${message.sender.image}`
+                  : './images/nophoto.png';
+                const messageClass =
+                  message.sender.id === loggedinUserId ? 'you-message' : 'other-message';
+                const showImage =
+                  message.sender.id === loggedinUserId
+                    ? ''
+                    : `<img src="${senderImage}" alt="${message.sender.name}" />`;
+
+                // message attachments
+                let attachments = '<div class="attachments">';
+                if (message.attachment && message.attachment.length > 0) {
+                  message.attachment.forEach((attachment) => {
+                    attachments += `<img src="./uploads/attachments/${attachment}" /> `;
+                  });
+                }
+                attachments += '</div>';
+
+                // final message html
+                let messageHTML = `<div class="message-row ${messageClass}"><div class="message-content">
+                      ${showImage}
+                      <div class="message-text">${message.text}</div>
+                      ${attachments}
+                      <div class="message-time">${moment(message.datetime).fromNow()}</div>
+                    </div></div>`;
+                allMessages += messageHTML;
+
+                messageContainer.innerHTML = allMessages;
+              });
+            } else if (result.data.message.length === 0) {
+              messageContainer.innerHTML = '<div class="message-row"></div>';
+            }
+
+            chatTitleContainer.textContent = current_conversation_name;
+          }
+        } else {
+          alert('Error loading messages!');
+        }
+      }
+
+      // Send message
+      form.onsubmit = async function (event) {
+        event.preventDefault();
+
+        // prepare the form data
+        const formData = new FormData(form);
+
+        formData.append('receiverId', participant.id);
+        formData.append('receiverName', participant.name);
+        formData.append('image', participant.image || '');
+        formData.append('conversationId', current_conversation_id);
+
+        // send the request to server
+        let response = await fetch('/inbox/message', {
+          method: 'POST',
+          body: formData,
+        });
+
+        // get response
+        let result = await response.json();
+
+        if (!result.errors) {
+          form.reset(); // reset the form
+        } else {
+          alert('Error sending message!');
+        }
+      };
+
+      // Typing detector
+      let typingTimer;
+      const doneTypingInterval = 500;
+
+      function closeModal() {
+        document.querySelector('#add-conversation-modal').style.display = 'none';
+
+        // reset
+        document.querySelector('.search_users').style.display = 'none';
+        document.querySelector('input#user').value = '';
+      }
+
+      function openModal() {
+        document.querySelector('#add-conversation-modal').style.display = 'block';
+      }
+
+      //on keyup, start the countdown
+      document.querySelector('input#username').addEventListener('keyup', function () {
+        clearTimeout(typingTimer);
+
+        // reset
+        document.querySelector('.main_search_users').style.display = 'none';
+
+        if (document.querySelector('input#username').value) {
+          typingTimer = setTimeout(mainSearchUsers, doneTypingInterval); //user is "finished typing," send search request
+        }
+      });
+
+      document.querySelector('input#user').addEventListener('keyup', function () {
+        clearTimeout(typingTimer);
+
+        // reset
+        document.querySelector('.search_users').style.display = 'none';
+
+        if (document.querySelector('input#user').value) {
+          typingTimer = setTimeout(searchUsers, doneTypingInterval); //user is "finished typing," send search request
+        }
+      });
+
+      //on keydown, clear the countdown
+      document.querySelector('input#username').addEventListener('keydown', function () {
+        clearTimeout(typingTimer);
+      });
+
+      document.querySelector('input#user').addEventListener('keydown', function () {
+        clearTimeout(typingTimer);
+      });
+
+      // send request for search
+      async function mainSearchUsers() {
+        let response = await fetch('/inbox/search', {
+          method: 'POST',
+          body: JSON.stringify({
+            user: document.querySelector('input#username').value,
+            searchType: 1,
+          }),
+          headers: {
+            'Content-type': 'application/json; charset=UTF-8',
+          },
+        });
+
+        // get response
+        let result = await response.json();
+
+        // handle error and response
+        if (result.errors) {
+          const errorplaceholder = document.querySelector('p.error');
+
+          errorplaceholder.textContent = result.errors.common.msg;
+          errorplaceholder.style.display = 'block';
+        } else {
+          if (result.length > 0) {
+            let generatedHtml = '<ul>';
+            result.forEach((user) => {
+              const image = user.participant.image
+                ? './uploads/people/' + user.participant.image
+                : './images/nophoto.png';
+              generatedHtml += `<li onclick="showConversation('${user.participant.id}','${user.participant.name}')">
+                <div class="user">
+                  <div class="avatar">
+                    <img width="30px" height="30px" src="${image}" />
+                  </div>
+                  <div class="username">${user.participant.name}</div>
+                </div>
+              </li>`;
+            });
+            generatedHtml += '</ul>';
+
+            document.querySelector('.main_search_users').innerHTML = generatedHtml;
+            document.querySelector('.main_search_users').style.display = 'block';
+          }
+        }
+      }
+
+      async function searchUsers() {
+        let response = await fetch('/inbox/search', {
+          method: 'POST',
+          body: JSON.stringify({
+            user: document.querySelector('input#user').value,
+            searchType: 2,
+          }),
+          headers: {
+            'Content-type': 'application/json; charset=UTF-8',
+          },
+        });
+
+        // get response
+        let result = await response.json();
+
+        // handle error and response
+        if (result.errors) {
+          const errorplaceholder = document.querySelector('p.error');
+
+          errorplaceholder.textContent = result.errors.common.msg;
+          errorplaceholder.style.display = 'block';
+        } else {
+          if (result.length > 0) {
+            let generatedHtml = '<ul>';
+            result.forEach((user) => {
+              const image = user.image ? './uploads/people/' + user.image : './images/nophoto.png';
+              generatedHtml += `<li onclick="createConversation('${user._id}', '${user.name}', '${user.image}')">
+                <div class="user">
+                  <div class="avatar">
+                    <img src="${image}" />
+                  </div>
+                  <div class="username">${user.name}</div>
+                </div>
+              </li>`;
+            });
+            generatedHtml += '</ul>';
+
+            document.querySelector('.search_users').innerHTML = generatedHtml;
+            document.querySelector('.search_users').style.display = 'block';
+          }
+        }
+      }
+
+      // create Conversation
+      async function showConversation(participantId, participantName) {
+        try {
+          const response = await fetch('/inbox', {
+            method: 'POST',
+            body: JSON.stringify({
+              participantId,
+            }),
+            headers: {
+              'Content-type': 'application/json; charset=UTF-8',
+            },
+          });
+
+          setTimeout(() => {
+            location.reload();
+          }, 1000);
+        } catch (err) {
+          alert(err);
+        }
+      }
+
+      // create Conversation
+      async function createConversation(id, name, image) {
+        try {
+          const response = await fetch('/inbox/conversation', {
+            method: 'POST',
+            body: JSON.stringify({
+              participant: name,
+              id: id,
+              image: image != 'undefined' ? image : null,
+            }),
+            headers: {
+              'Content-type': 'application/json; charset=UTF-8',
+            },
+          });
+
+          const result = response.json();
+
+          if (!result.errors) {
+            // reset
+            document.querySelector('.search_users').style.display = 'none';
+            document.querySelector('input#user').value = name;
+
+            // reload the page after 1 second
+            setTimeout(() => {
+              location.reload();
+            }, 1000);
+          } else {
+            throw new Error(result.errors.common.msg);
+          }
+        } catch (err) {
+          alert(err);
+        }
+      }
+
+      async function deleteConversation() {
+        if (current_conversation_id) {
+          const response = await fetch('/inbox/conversation/' + current_conversation_id, {
+            method: 'DELETE',
+          });
+
+          const result = await response.json();
+
+          console.log(result);
+
+          alert(result.message);
+
+          location.reload();
+        }
+      }
+
+      // Logout
+      function logout() {
+        fetch('/', {
+          method: 'DELETE',
+        });
+
+        location.reload();
+      }
+    </script>
   </body>
 </html>

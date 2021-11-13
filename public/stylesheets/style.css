@@ -1,11 +1,3 @@
-/*
- * Title: Project style sheet
- * Description: This is the main project style sheet of this project
- * Author: Sumit Saha ( Learn with Sumit )
- * Date: 23/05/2021
- *
- */
-
 /* css custom properties */
 :root {
   --primary: #171c2a;
@@ -75,7 +67,7 @@ input.error {
   border: 1px solid var(--red);
 }
 
-input[type="submit"] {
+input[type='submit'] {
   margin: 2rem auto;
   width: 200px;
   background: linear-gradient(to right, var(--green), var(--blue));
@@ -84,8 +76,28 @@ input[type="submit"] {
   transition: transform 0.1s ease-in-out;
 }
 
-input[type="submit"]:active {
+input[type='submit']:active {
   transform: scale(0.99);
+}
+
+.nothing {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-content: center;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 2.5rem;
+}
+
+.nothing img {
+  width: 100%;
+  max-width: 120px;
+}
+
+@media only screen and (max-width: 1000px) {
+  .nothing {
+    display: none;
+  }
 }
 
 /* modal relayed styles */
@@ -155,6 +167,65 @@ input[type="submit"]:active {
   color: #fff;
 }
 
+.search_users {
+  display: none;
+  background: var(--secondary);
+  outline: none;
+  padding: 15px;
+  border: 1px solid var(--dark);
+  color: var(--light);
+  border-radius: 6px;
+  font-size: 1.2rem;
+  position: absolute;
+  top: 130px;
+  width: 82%;
+  height: auto;
+}
+
+.main_search_users {
+  display: none;
+  background: var(--secondary);
+  outline: none;
+  padding: 15px;
+  border: 1px solid var(--dark);
+  color: var(--light);
+  border-radius: 6px;
+  font-size: 1.2rem;
+  position: absolute;
+  top: 100px;
+  width: 15%;
+  height: auto;
+}
+
+.search_users ul,
+.main_search_users ul {
+  list-style-type: none;
+}
+
+.search_users ul > li,
+.main_search_users ul > li {
+  background: var(--primary);
+  padding: 7px;
+  border: 1px solid var(--dark);
+  border-radius: 6px;
+  width: 100%;
+  height: auto;
+  cursor: pointer;
+}
+
+.search_users .user,
+.main_search_users .user {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  align-items: center;
+}
+
+.search_users .avatar img,
+.main_search_users .avatar img {
+  width: 24px;
+  height: 24px;
+}
+
 /* modal related responsive styles */
 
 @media only screen and (max-width: 600px) {
@@ -170,7 +241,9 @@ input[type="submit"]:active {
   justify-content: end;
   align-content: center;
   height: 40px;
-  width: auto;
+  min-width: 800px;
+  max-width: 1000px;
+  width: 100%;
 }
 
 .menu-item {
@@ -189,20 +262,38 @@ input[type="submit"]:active {
   text-decoration: none;
 }
 
+.menu img {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  border-radius: 100%;
+}
+
+@media only screen and (max-width: 800px) {
+  .menu {
+    min-width: 90%;
+  }
+}
+
+@media only screen and (max-width: 600px) {
+  .menu {
+    width: 80%;
+  }
+}
+
 /* inbox related styles */
 
 #chat-container {
   display: grid;
   grid:
-    "search-container chat-title" 71px
-    "conversation-list chat-message-list" 1fr
-    "new-message-container chat-form" 78px
+    'search-container chat-title' 71px
+    'conversation-list chat-message-list' 1fr
+    'new-message-container chat-form' 78px
     /275px 1fr;
   min-width: 800px;
   max-width: 1000px;
-  max-height: 800px;
   width: 100%;
-  height: 95vh;
+  height: calc(100vh - 70px);
   background: var(--primary);
   border-radius: 10px;
 }
@@ -289,7 +380,8 @@ input[type="submit"]:active {
   font-size: 1rem;
 }
 
-.conversation-message {
+.conversation-date {
+  font-size: 1rem;
   grid-column: span 2;
   padding-left: 5px;
   white-space: nowrap;
@@ -359,7 +451,7 @@ input[type="submit"]:active {
 
 .message-row {
   display: grid;
-  grid-template-columns: 70%;
+  /* grid-template-columns: 70%; */
   margin-bottom: 20px;
 }
 
@@ -375,8 +467,10 @@ input[type="submit"]:active {
   justify-content: end;
 }
 
-.your-message .message-content {
+.you-message .message-content {
   justify-items: end;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-column-gap: 15px;
 }
 
 .other-message {
@@ -384,11 +478,11 @@ input[type="submit"]:active {
 }
 
 .other-message .message-content {
-  grid-template-columns: 48px 1fr;
+  grid-template-columns: 48px 1fr 1fr;
   grid-column-gap: 15px;
 }
 
-.message-row img {
+.message-row img:first-of-type {
   border-radius: 100%;
   grid-row: span 2;
 }
@@ -429,6 +523,7 @@ input[type="submit"]:active {
   border-top: 2px solid rgba(0, 0, 0, 0.25);
   padding-left: 10px;
   padding-right: 22px;
+  visibility: hidden;
 }
 
 #chat-form input {
@@ -436,7 +531,7 @@ input[type="submit"]:active {
   outline: none;
   padding: 15px;
   border: 2px solid var(--dark);
-  color: #330;
+  color: rgba(255, 255, 255, 0.5);
   border-radius: 6px;
   font-size: 1.4rem;
 }
@@ -462,9 +557,9 @@ input[type="submit"]:active {
     min-width: 90%;
     height: 88vh;
     grid:
-      "search-container chat-title" 71px
-      "conversation-list chat-message-list" 1fr
-      "new-message-container chat-form" 78px
+      'search-container chat-title' 71px
+      'conversation-list chat-message-list' 1fr
+      'new-message-container chat-form' 78px
       /70px 1fr;
   }
 
@@ -488,22 +583,21 @@ input[type="submit"]:active {
 /* login related styles */
 #login-container {
   display: grid;
-  min-width: 800px;
+  /* min-width: 800px; */
   max-width: 1000px;
-  max-height: 800px;
-  width: 60%;
-  height: 90vh;
+  width: 100%;
+  height: calc(100vh - 70px);
   background: var(--primary);
   border-radius: 10px;
   grid-template-areas:
-    "left-column branding"
-    "left-column login-form";
+    'left-column branding'
+    'left-column login-form';
 }
 
 #left-column {
   grid-area: left-column;
   background-color: var(--tertiary);
-  background-image: url("../images/illustration.png");
+  background-image: url('../images/illustration.png');
   background-size: 68%;
   background-position: center;
   background-repeat: no-repeat;
@@ -555,8 +649,8 @@ input[type="submit"]:active {
     width: 80%;
     height: 80vh;
     grid-template-areas:
-      "branding"
-      "login-form";
+      'branding'
+      'login-form';
   }
 
   #left-column {
@@ -571,9 +665,8 @@ input[type="submit"]:active {
   align-items: center;
   min-width: 800px;
   max-width: 1000px;
-  max-height: 800px;
   width: 100%;
-  height: 95vh;
+  height: calc(100vh - 70px);
   background: var(--primary);
   border-radius: 10px;
   padding: 4rem 3rem;
@@ -690,10 +783,6 @@ input[type="submit"]:active {
 .toastify {
   color: var(--secondary);
   font-size: 14px !important;
-  background: -webkit-linear-gradient(
-    to right,
-    var(--green) 0%,
-    var(--blue) 100%
-  );
+  background: -webkit-linear-gradient(to right, var(--green) 0%, var(--blue) 100%);
   background: linear-gradient(to right, var(--green) 0%, var(--blue) 100%);
 }

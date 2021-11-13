@@ -11,6 +11,10 @@ const responseType = {};
 // Not found handler
 responseType.setResponse = (req, res, next) => {
   res.locals.response = 'html';
+  res.locals.loggedInUserData = {};
+  res.locals.data = '';
+  res.locals.errors = {};
+
   next();
 };
 
